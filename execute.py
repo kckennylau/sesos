@@ -4,13 +4,13 @@ from sys import exit, stderr, stdin, stdout
 
 def add(argument):
 	global code_head
-	data[data_head] += argument
+	data[data_head] += argument+1
 	data[data_head] &= mask
 	code_head += 1
 
 def fwd(argument):
 	global code_head, data_head
-	data_head += argument
+	data_head += argument+1
 	code_head += 1
 
 def get(_):
@@ -127,8 +127,9 @@ markers_open = []
 def execute(source, count, debug):
 	global code_head, code_index, commands, level, mask, numeric_input, numeric_output
 	operators = (jmp, jnz, get, put, sub, add, rwd, fwd)
-	operators_rle = ({sub}, {add}, {sub, add}, {rwd}, {fwd}, {rwd, fwd})
-	operators_odd = (add, fwd)
+	operators_rle = ((sub, sub), (sub, add), (sub, get), (add, sub), (add, add), (add, get), (rwd, rwd), (rwd, fwd), (fwd, rwd), (fwd, fwd))
+	operators_value = {get:1, sub:2, add:3}
+	base3_operators = (sub, add)
 
 	code_integer = int.from_bytes(source, 'little')
 
@@ -143,8 +144,11 @@ def execute(source, count, debug):
 		operator_last = code[-1][0] if code else nop
 		operator = operators[code_integer & 7]
 		code_integer >>= 3
-		if {operator_last, operator} in operators_rle:
-			code[-1][1] = code[-1][1] << 1 | (operator in operators_odd)
+		if (operator_last, operator) in operators_rle:
+			if operator_last in base3_operators:
+				code[-1][1] = code[-1][1] *3 + operators_value[operator]
+			else:
+				code[-1][1] = code[-1][1] << 1 | (operator == fwd)
 			continue
 		code_index +=1
 		operator_next = operators[code_integer & 7]
