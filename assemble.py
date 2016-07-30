@@ -60,7 +60,8 @@ def assemble(source):
 							for instruction in to_append:
 								append(instruction)
 					else:
-						append((instruction_index - 7) & 1, (instruction_index - 7) >> 1)
+						append((instruction_index - 7) & 1)
+						append((instruction_index - 7) >> 1)
 					last_index = instruction_index
 					last_command = command
 					last_linenumber = linenumber
