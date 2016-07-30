@@ -4,13 +4,13 @@ from sys import exit, stderr, stdin, stdout
 
 def add(argument):
 	global code_head
-	data[data_head] += argument+1
+	data[data_head] += argument
 	data[data_head] &= mask
 	code_head += 1
 
 def fwd(argument):
 	global code_head, data_head
-	data_head += argument+1
+	data_head += argument
 	code_head += 1
 
 def get(_):
@@ -144,12 +144,15 @@ def execute(source, count, debug):
 		operator_last = code[-1][0] if code else nop
 		operator = operators[code_integer & 7]
 		code_integer >>= 3
-		if (operator_last, operator) in operators_rle:
+		while (operator_last, operator) in operators_rle:
 			if operator_last in base3_operators:
 				code[-1][1] = code[-1][1] *3 + operators_value[operator]
 			else:
 				code[-1][1] = code[-1][1] << 1 | (operator == fwd)
-			continue
+			operator = operators[code_integer & 7]
+			code_integer >>= 3
+		if operator_last in base3_operators:
+			code[-1][1] += 1
 		code_index +=1
 		operator_next = operators[code_integer & 7]
 		if operator == jmp:
@@ -165,13 +168,13 @@ def execute(source, count, debug):
 				set_entry_marker(nop)
 				code_integer >>= 3
 		else:
-			code.append([operator, 1])
+			code.append([operator, 0 if operator in base3_operators else 1])
 
 	level -= code_head
 	code.extend([[jnz, 1]] * level)
 	code.append([say_and_exit if count else exit, 0])
 	code.extend([[jmp, 1]] * -code_head)
-
+	
 	while markers_open:
 		code_index += 1
 		marker = markers_open.pop()

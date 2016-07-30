@@ -1,10 +1,9 @@
 from sys import exit
 
-def append(*instruction_indices):
+def append(instruction_index):
 	global code_integer, code_shift
-	for index in instruction_indices:
-		code_shift += 3
-		code_integer |= index << code_shift
+	code_shift += 3
+	code_integer |= instruction_index << code_shift
 
 code_integer = 0
 code_shift = 0
@@ -52,11 +51,14 @@ def assemble(source):
 							for bit in map(int, bin(repetitions)[3:]):
 								append(instruction_index | bit)
 						else:
-							#bijective ternary, big-endian
+							#bijective ternary, little-endian
 							repetitions -= 1
+							to_append = []
 							while repetitions > 0:
-								append((2,4,5)[(repetitions-1)%3])
+								to_append = [(2,4,5)[(repetitions-1)%3]] + to_append
 								repetitions = (repetitions-1)//3
+							for instruction in to_append:
+								append(instruction)
 					else:
 						append((instruction_index - 7) & 1, (instruction_index - 7) >> 1)
 					last_index = instruction_index
